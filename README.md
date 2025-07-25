@@ -13,4 +13,8 @@ then to start the server
 ```bash
 npm run dev
 ```
+you can access the website at
 
+```bash
+http://localhost:5173/
+```
