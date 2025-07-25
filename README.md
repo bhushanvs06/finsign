@@ -1,9 +1,9 @@
 # finsign
 
 to run it locally
-#clone the repo
+# Clone the repo
 ```bash
-hello
+https://github.com/bhushanvs06/finsign.git
 ```
 then change the directory
 ```bash
