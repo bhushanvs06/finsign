@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { Upload, FileText, TrendingUp, BarChart3, DollarSign, Calculator, Shield, AlertCircle, CheckCircle, Menu, X, Target, BookOpen } from 'lucide-react';
 import './styles/App.css';
 import './styles/dashboard.css';
-// import './styles/components.css';
-// import './styles/responsive.css';
+import './styles/components.css';
+import './styles/responsive.css';
 
 const FinSightDashboard = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
