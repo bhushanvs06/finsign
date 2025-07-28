@@ -34,7 +34,7 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  height: 100vh;
+  height: auto;
   width: 256px;
   background: white;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -74,12 +74,12 @@ body {
 .logo-title {
   font-size: 20px;
   font-weight: bold;
-  color: #1f2937;
+  color: #fafafa;
 }
 
 .logo-subtitle {
   font-size: 12px;
-  color: #6b7280;
+  color: #b1b6c0;
 }
 
 .sidebar-close {
@@ -121,13 +121,13 @@ body {
 }
 
 .nav-item:hover {
-  background-color: #f9fafb;
+  background-color:#2c323d;
 }
 
 .nav-item-active {
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
+  background-color: #4e5969;
+  border: 1px solid #464647;
+  color: #fafafa;
   font-weight: 500;
 }
 
@@ -180,7 +180,7 @@ body {
 .header-title {
   font-size: 20px;
   font-weight: 600;
-  color: #1f2937;
+  color: #d7e6e6;
   margin-bottom: 2px;
 }
 

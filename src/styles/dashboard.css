@@ -8,11 +8,11 @@
 }
 
 .stat-card {
-  background: white;
+  background:#374151;
   padding: 24px;
   border-radius: 12px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+  border: 1px solid #646568;
 }
 
 .stat-content {
@@ -50,18 +50,18 @@
 }
 
 .chart-card {
-  background: white;
+  background:#374151;
   border-radius: 12px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+  border: 1px solid #505155;
   padding: 24px;
 }
 
 .trend-card {
-  background: white;
+  background:#374151;
   border-radius: 12px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+  border: 1px solid #47484b;
   padding: 24px;
 }
 
