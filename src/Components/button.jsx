@@ -1,25 +1,67 @@
 import React, { useState } from 'react';
-import { Upload, FileText, TrendingUp, PieChart, BarChart3, DollarSign, Calculator, Shield, AlertCircle, CheckCircle, Menu, X, Target, BookOpen } from 'lucide-react';
+import { Upload, FileText, TrendingUp, PieChart, BarChart3, DollarSign, Calculator, Shield, AlertCircle, CheckCircle, Menu, X, Target, BookOpen, Brain, Loader } from 'lucide-react';
 
 const FinSightDashboard = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentTax, setCurrentTax] = useState(0);
+  const [potentialSavings, setPotentialSavings] = useState(0);
+  const [investmentPlan, setInvestmentPlan] = useState([]);
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (file && file.type === 'application/pdf') {
       setUploadedFile(file);
       setLoading(true);
       setAnalysisComplete(false);
       
-      // Simulate analysis completion after 3 seconds
-      setTimeout(() => {
+      try {
+        const formData = new FormData();
+        formData.append('pdf', file);
+        
+        const response = await fetch('http://localhost:5000/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        // Parse AI response and extract key information
+        const aiResponse = data.suggestion;
+        setAiSuggestions(aiResponse);
+        
+        // Extract numbers from AI response (basic parsing)
+        const taxMatch = aiResponse.match(/tax.*?(\d+,?\d*)/i);
+        const savingsMatch = aiResponse.match(/save.*?(\d+,?\d*)/i);
+        
+        if (taxMatch) {
+          setCurrentTax(parseInt(taxMatch[1].replace(',', '')));
+        }
+        if (savingsMatch) {
+          setPotentialSavings(parseInt(savingsMatch[1].replace(',', '')));
+        }
+        
+        // Extract investment plan
+        const investmentMatches = aiResponse.match(/(\d+)%\s*([^,\n]+)/g);
+        if (investmentMatches) {
+          const plan = investmentMatches.map(match => {
+            const [, percentage, instrument] = match.match(/(\d+)%\s*(.+)/);
+            return { percentage: parseInt(percentage), instrument: instrument.trim() };
+          });
+          setInvestmentPlan(plan);
+        }
+        
         setAnalysisComplete(true);
         setLoading(false);
-      }, 3000);
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        setLoading(false);
+        alert('Error analyzing PDF. Please try again.');
+      }
     }
   };
 
@@ -41,7 +83,7 @@ const FinSightDashboard = () => {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'upload', label: 'Upload Documents', icon: Upload },
+    { id: 'upload', label: 'AI Analysis', icon: Brain },
     { id: 'calculator', label: 'Tax Calculator', icon: Calculator },
     { id: 'reports', label: 'Reports', icon: TrendingUp },
   ];
@@ -52,8 +94,8 @@ const FinSightDashboard = () => {
       {/* File Upload Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <Upload className="text-blue-600" size={20} />
-          Upload Tax Documents
+          <Brain className="text-blue-600" size={20} />
+          AI-Powered Tax Analysis
         </h3>
         
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
@@ -66,7 +108,7 @@ const FinSightDashboard = () => {
           />
           <label htmlFor="file-upload" className="cursor-pointer">
             <FileText className="mx-auto text-gray-400 mb-4" size={48} />
-            <p className="text-gray-600 mb-2">Drop your PDF tax documents here or click to browse</p>
+            <p className="text-gray-600 mb-2">Upload your PDF tax documents for AI analysis</p>
             <p className="text-sm text-gray-500">Supports: Form 16, Bank Statements, Investment Proofs</p>
           </label>
           
@@ -75,7 +117,7 @@ const FinSightDashboard = () => {
               <FileText className="text-blue-600" size={20} />
               <span className="text-blue-800">{uploadedFile.name}</span>
               {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                <Loader className="animate-spin text-blue-600" size={20} />
               ) : analysisComplete ? (
                 <CheckCircle className="text-green-600" size={20} />
               ) : null}
@@ -90,7 +132,9 @@ const FinSightDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Potential Savings</p>
-              <p className="text-2xl font-bold text-green-600">₹78,000</p>
+              <p className="text-2xl font-bold text-green-600">
+                ₹{potentialSavings ? potentialSavings.toLocaleString() : '78,000'}
+              </p>
             </div>
             <DollarSign className="text-green-600" size={24} />
           </div>
@@ -100,7 +144,9 @@ const FinSightDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Current Tax</p>
-              <p className="text-2xl font-bold text-blue-600">₹2,40,000</p>
+              <p className="text-2xl font-bold text-blue-600">
+                ₹{currentTax ? currentTax.toLocaleString() : '2,40,000'}
+              </p>
             </div>
             <Calculator className="text-blue-600" size={24} />
           </div>
@@ -109,8 +155,10 @@ const FinSightDashboard = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Optimization Score</p>
-              <p className="text-2xl font-bold text-orange-600">67/100</p>
+              <p className="text-sm text-gray-600">AI Optimization Score</p>
+              <p className="text-2xl font-bold text-orange-600">
+                {analysisComplete ? '85/100' : '67/100'}
+              </p>
             </div>
             <Target className="text-orange-600" size={24} />
           </div>
@@ -119,13 +167,68 @@ const FinSightDashboard = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Documents</p>
+              <p className="text-sm text-gray-600">Documents Analyzed</p>
               <p className="text-2xl font-bold text-purple-600">{uploadedFile ? '1' : '0'}</p>
             </div>
             <FileText className="text-purple-600" size={24} />
           </div>
         </div>
       </div>
+
+      {/* Investment Allocation Chart */}
+      {investmentPlan.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <PieChart className="text-blue-600" size={20} />
+            AI Recommended Investment Allocation
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              {investmentPlan.map((item, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-4 h-4 rounded-full"
+                      style={{backgroundColor: `hsl(${index * 60}, 70%, 60%)`}}
+                    ></div>
+                    <span className="font-medium text-gray-800">{item.instrument}</span>
+                  </div>
+                  <span className="font-bold text-blue-600">{item.percentage}%</span>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex items-center justify-center">
+              <div className="relative w-48 h-48">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  {investmentPlan.reduce((acc, item, index) => {
+                    const startAngle = acc.angle;
+                    const endAngle = startAngle + (item.percentage * 3.6);
+                    const largeArcFlag = item.percentage > 50 ? 1 : 0;
+                    const x1 = 50 + 40 * Math.cos(startAngle * Math.PI / 180);
+                    const y1 = 50 + 40 * Math.sin(startAngle * Math.PI / 180);
+                    const x2 = 50 + 40 * Math.cos(endAngle * Math.PI / 180);
+                    const y2 = 50 + 40 * Math.sin(endAngle * Math.PI / 180);
+                    
+                    acc.paths.push(
+                      <path
+                        key={index}
+                        d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
+                        fill={`hsl(${index * 60}, 70%, 60%)`}
+                        stroke="white"
+                        strokeWidth="1"
+                      />
+                    );
+                    acc.angle = endAngle;
+                    return acc;
+                  }, { angle: 0, paths: [] }).paths}
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -176,11 +279,28 @@ const FinSightDashboard = () => {
       {/* AI Recommendations */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <AlertCircle className="text-amber-600" size={20} />
+          <Brain className="text-amber-600" size={20} />
           AI Recommendations
         </h3>
         
-        {analysisComplete ? (
+        {loading ? (
+          <div className="flex items-center justify-center h-32">
+            <Loader className="animate-spin text-blue-600 mr-2" size={20} />
+            <span className="text-gray-600">AI is analyzing your documents...</span>
+          </div>
+        ) : aiSuggestions ? (
+          <div className="space-y-4">
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                <Brain size={16} />
+                AI Analysis Results
+              </h4>
+              <div className="text-sm text-gray-700 whitespace-pre-line max-h-64 overflow-y-auto">
+                {aiSuggestions}
+              </div>
+            </div>
+          </div>
+        ) : analysisComplete ? (
           <div className="space-y-3">
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-sm font-medium text-amber-800">High Priority</p>
@@ -193,56 +313,109 @@ const FinSightDashboard = () => {
             </div>
             
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm font-medium text-green-800">Low Priority</p>
-              <p className="text-green-700">Optimize health insurance premium to maximize 80D benefits</p>
+              <p className="text-sm font-medium text-green-800">Investment Strategy</p>
+              <p className="text-green-700">Diversify portfolio: 50% FD, 30% Mutual Funds, 20% PPF for optimal risk-return balance</p>
             </div>
           </div>
         ) : (
           <div className="flex items-center justify-center h-32 text-gray-500">
-            <p>Upload your tax documents to get AI-powered recommendations</p>
+            <div className="text-center">
+              <Brain className="mx-auto mb-2 text-gray-400" size={32} />
+              <p>Upload your tax documents to get AI-powered recommendations</p>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 
-  // Upload Documents Content
-  const UploadContent = () => (
+  // AI Analysis Content
+  const AIAnalysisContent = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-6">Document Upload Center</h3>
+        <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2">
+          <Brain className="text-blue-600" size={20} />
+          AI Tax Document Analysis
+        </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            { type: 'Form 16', desc: 'Annual salary certificate', icon: '📄' },
-            { type: 'Bank Statements', desc: 'Last 6 months statements', icon: '🏦' },
-            { type: 'Investment Proofs', desc: 'ELSS, PPF, NSC receipts', icon: '📊' },
-            { type: 'Insurance Premiums', desc: 'Health & life insurance', icon: '🛡️' },
-            { type: 'Home Loan Documents', desc: 'Interest certificates', icon: '🏠' },
-            { type: 'Donation Receipts', desc: '80G eligible donations', icon: '❤️' },
-          ].map((item, index) => (
-            <div key={index} className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
-              <div className="text-3xl mb-2">{item.icon}</div>
-              <h4 className="font-semibold text-gray-800 mb-1">{item.type}</h4>
-              <p className="text-sm text-gray-600 mb-3">{item.desc}</p>
-              <button className="text-blue-600 text-sm font-medium hover:text-blue-700">
-                Upload Document
-              </button>
+        <div className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center bg-blue-50">
+          <input
+            type="file"
+            accept=".pdf"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="ai-file-upload"
+          />
+          <label htmlFor="ai-file-upload" className="cursor-pointer">
+            <Brain className="mx-auto text-blue-500 mb-4" size={64} />
+            <h4 className="text-xl font-semibold text-blue-800 mb-2">Upload for AI Analysis</h4>
+            <p className="text-blue-600 mb-4">Get personalized tax optimization recommendations</p>
+            <div className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <Upload className="mr-2" size={20} />
+              Choose PDF Document
             </div>
-          ))}
+          </label>
         </div>
+        
+        {uploadedFile && (
+          <div className="mt-6 p-4 bg-white border border-gray-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="text-blue-600" size={20} />
+                <div>
+                  <p className="font-medium text-gray-800">{uploadedFile.name}</p>
+                  <p className="text-sm text-gray-600">
+                    {loading ? 'Analyzing with AI...' : analysisComplete ? 'Analysis complete' : 'Ready for analysis'}
+                  </p>
+                </div>
+              </div>
+              {loading ? (
+                <Loader className="animate-spin text-blue-600" size={20} />
+              ) : analysisComplete ? (
+                <CheckCircle className="text-green-600" size={20} />
+              ) : null}
+            </div>
+          </div>
+        )}
       </div>
       
-      {uploadedFile && (
+      {aiSuggestions && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h4 className="font-semibold text-gray-800 mb-4">Uploaded Documents</h4>
-          <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-            <FileText className="text-blue-600" size={20} />
-            <div className="flex-1">
-              <p className="font-medium text-gray-800">{uploadedFile.name}</p>
-              <p className="text-sm text-gray-600">Uploaded just now</p>
+          <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <AlertCircle className="text-amber-600" size={20} />
+            Detailed AI Analysis
+          </h4>
+          <div className="prose max-w-none">
+            <div className="p-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 rounded-lg border">
+              <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700 leading-relaxed">
+                {aiSuggestions}
+              </pre>
             </div>
-            {analysisComplete && <CheckCircle className="text-green-600" size={20} />}
+          </div>
+        </div>
+      )}
+      
+      {investmentPlan.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <Target className="text-green-600" size={20} />
+            Recommended Investment Strategy
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {investmentPlan.map((item, index) => (
+              <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <div className="flex items-center justify-between mb-2">
+                  <h5 className="font-semibold text-gray-800">{item.instrument}</h5>
+                  <span className="text-lg font-bold text-blue-600">{item.percentage}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-1000"
+                    style={{width: `${item.percentage}%`}}
+                  ></div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -375,11 +548,11 @@ const FinSightDashboard = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
+            { title: 'AI Tax Analysis Report', desc: 'AI-generated tax optimization insights', status: analysisComplete ? 'Ready' : 'Pending' },
+            { title: 'Investment Portfolio', desc: 'AI-recommended investment allocation', status: investmentPlan.length > 0 ? 'Ready' : 'Pending' },
             { title: 'Annual Tax Summary', desc: 'Complete tax breakdown for FY 2023-24', status: 'Ready' },
-            { title: 'Investment Analysis', desc: 'Performance of tax-saving investments', status: 'Processing' },
             { title: 'Deduction Optimizer', desc: 'Missed opportunities and suggestions', status: 'Ready' },
             { title: 'Quarterly Reports', desc: 'Q1-Q4 tax planning reports', status: 'Ready' },
-            { title: 'Compliance Checklist', desc: 'ITR filing compliance status', status: 'Pending' },
             { title: 'Future Projections', desc: 'Next year tax planning insights', status: 'Ready' },
           ].map((report, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -407,16 +580,16 @@ const FinSightDashboard = () => {
           <h4 className="font-semibold text-gray-800 mb-4">Recent Activity</h4>
           <div className="space-y-3">
             {[
-              { action: 'Document uploaded', time: '2 hours ago', type: 'upload' },
+              { action: analysisComplete ? 'AI analysis completed' : 'Waiting for document upload', time: '2 hours ago', type: 'analysis' },
               { action: 'Tax calculation completed', time: '1 day ago', type: 'calculation' },
               { action: 'Report generated', time: '3 days ago', type: 'report' },
               { action: 'Profile updated', time: '1 week ago', type: 'profile' },
             ].map((activity, index) => (
               <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <div className={`w-2 h-2 rounded-full ${
-                  activity.type === 'upload' ? 'bg-blue-500' :
+                  activity.type === 'analysis' ? 'bg-purple-500' :
                   activity.type === 'calculation' ? 'bg-green-500' :
-                  activity.type === 'report' ? 'bg-purple-500' :
+                  activity.type === 'report' ? 'bg-blue-500' :
                   'bg-gray-500'
                 }`}></div>
                 <div className="flex-1">
@@ -432,8 +605,8 @@ const FinSightDashboard = () => {
           <h4 className="font-semibold text-gray-800 mb-4">Export Options</h4>
           <div className="space-y-3">
             <button className="w-full p-3 border border-gray-300 rounded-lg text-left hover:bg-gray-50 transition-colors">
-              <div className="font-medium text-gray-800">Export to PDF</div>
-              <div className="text-sm text-gray-600">Download comprehensive tax report</div>
+              <div className="font-medium text-gray-800">Export AI Analysis to PDF</div>
+              <div className="text-sm text-gray-600">Download comprehensive AI tax report</div>
             </button>
             
             <button className="w-full p-3 border border-gray-300 rounded-lg text-left hover:bg-gray-50 transition-colors">
@@ -442,8 +615,8 @@ const FinSightDashboard = () => {
             </button>
             
             <button className="w-full p-3 border border-gray-300 rounded-lg text-left hover:bg-gray-50 transition-colors">
-              <div className="font-medium text-gray-800">Email Report</div>
-              <div className="text-sm text-gray-600">Send report to your email address</div>
+              <div className="font-medium text-gray-800">Email AI Report</div>
+              <div className="text-sm text-gray-600">Send AI analysis to your email address</div>
             </button>
           </div>
         </div>
@@ -456,7 +629,7 @@ const FinSightDashboard = () => {
       case 'dashboard':
         return <DashboardContent />;
       case 'upload':
-        return <UploadContent />;
+        return <AIAnalysisContent />;
       case 'calculator':
         return <CalculatorContent />;
       case 'reports':
